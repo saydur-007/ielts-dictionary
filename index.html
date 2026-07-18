@@ -14,13 +14,7 @@ body{
 }
 
 .container{
-    max-width:760px;
-    margin:0 auto;
-}
-
-h2{
-    text-align:center;
-    margin-bottom:20px;
+    max-width:100%;
 }
 
 .search-box{
@@ -62,6 +56,26 @@ button:disabled{
 #result{
     margin-top:20px;
     line-height:1.8;
+}
+
+.result-grid{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:32px;
+}
+
+.left-col{
+    min-width:0;
+}
+
+.right-col{
+    min-width:0;
+}
+
+@media (max-width:700px){
+    .result-grid{
+        grid-template-columns:1fr;
+    }
 }
 
 hr{
@@ -180,7 +194,6 @@ h3{
 
 .word-image{
     width:100%;
-    max-width:320px;
     border-radius:10px;
     margin:12px 0;
     display:block;
@@ -199,8 +212,6 @@ h3{
 <body>
 
 <div class="container">
-
-<h2>📖 Dictionary</h2>
 
 <div class="search-box">
     <input
@@ -377,43 +388,46 @@ function renderResult(entry, banglaText, imageInfo) {
         }
     }
 
-    let html = `<div class="word-title">${escapeHtml(wordText)}</div>`;
+    let leftHtml = `<div class="word-title">${escapeHtml(wordText)}</div>`;
 
     if (phoneticText) {
-        html += `<div class="phonetic">Pronunciation: ${escapeHtml(phoneticText)}</div>`;
+        leftHtml += `<div class="phonetic">Pronunciation: ${escapeHtml(phoneticText)}</div>`;
     }
 
     if (banglaText) {
-        html += `<div class="bangla"><span class="bangla-label">বাংলা:</span>${escapeHtml(banglaText)}</div>`;
+        leftHtml += `<div class="bangla"><span class="bangla-label">বাংলা:</span>${escapeHtml(banglaText)}</div>`;
     }
 
     if (audioUrl) {
-        html += `<button class="play-btn" onclick="playAudio('${audioUrl.replace(/'/g, "\\'")}')">🔊 Play Pronunciation</button>`;
+        leftHtml += `<button class="play-btn" onclick="playAudio('${audioUrl.replace(/'/g, "\\'")}')">🔊 Play Pronunciation</button>`;
     }
 
     if (imageInfo && imageInfo.url) {
-        html += `<img class="word-image" src="${escapeHtml(imageInfo.url)}" alt="${escapeHtml(wordText)}" onerror="this.style.display='none'">`;
+        leftHtml += `<img class="word-image" src="${escapeHtml(imageInfo.url)}" alt="${escapeHtml(wordText)}" onerror="this.style.display='none'">`;
         if (imageInfo.credit) {
-            html += `<div class="image-credit">${escapeHtml(imageInfo.credit)}</div>`;
+            leftHtml += `<div class="image-credit">${escapeHtml(imageInfo.credit)}</div>`;
         }
     }
 
-    if (Array.isArray(entry.meanings)) {
-        entry.meanings.forEach(meaning => {
+    let rightHtml = "";
 
-            html += `<hr><div class="meaning-block">`;
-            html += `<div class="pos">${escapeHtml(meaning.partOfSpeech || "")}</div>`;
+    if (Array.isArray(entry.meanings)) {
+        entry.meanings.forEach((meaning, idx) => {
+
+            if (idx > 0) rightHtml += `<hr>`;
+            rightHtml += `<div class="meaning-block">`;
+            rightHtml += `<div class="pos">${escapeHtml(meaning.partOfSpeech || "")}</div>`;
 
             if (Array.isArray(meaning.definitions)) {
                 meaning.definitions.slice(0, 4).forEach((def, i) => {
 
-                    html += `<div class="def-item"><span class="def-number">${i + 1}.</span>${escapeHtml(def.definition || "")}`;
+                    rightHtml += `<div class="def-item"><span class="def-number">${i + 1}.</span>${escapeHtml(def.definition || "")}`;
 
                     if (def.example) {
-                        html += `<div class="example">e.g. "${escapeHtml(def.example)}"</div>`;
+                        rightHtml += `<div class="example">e.g. "${escapeHtml(def.example)}"</div>`;
                     }
 
-                    html += `</div>`;
+                    rightHtml += `</div>`;
 
                 });
             }
@@ -424,23 +438,28 @@ function renderResult(entry, banglaText, imageInfo) {
             const antonyms = collectUnique(meaning, "antonyms");
 
             if (synonyms.length > 0) {
-                html += `<div class="tag-row"><span class="tag-label">Synonyms:</span>`;
-                html += synonyms.slice(0, 6).map(s => `<span class="tag">${escapeHtml(s)}</span>`).join("");
-                html += `</div>`;
+                rightHtml += `<div class="tag-row"><span class="tag-label">Synonyms:</span>`;
+                rightHtml += synonyms.slice(0, 6).map(s => `<span class="tag">${escapeHtml(s)}</span>`).join("");
+                rightHtml += `</div>`;
             }
 
             if (antonyms.length > 0) {
-                html += `<div class="tag-row"><span class="tag-label">Antonyms:</span>`;
-                html += antonyms.slice(0, 6).map(a => `<span class="tag antonym">${escapeHtml(a)}</span>`).join("");
-                html += `</div>`;
+                rightHtml += `<div class="tag-row"><span class="tag-label">Antonyms:</span>`;
+                rightHtml += antonyms.slice(0, 6).map(a => `<span class="tag antonym">${escapeHtml(a)}</span>`).join("");
+                rightHtml += `</div>`;
             }
 
-            html += `</div>`;
+            rightHtml += `</div>`;
 
         });
     }
 
-    result.innerHTML = html;
+    result.innerHTML = `
+        <div class="result-grid">
+            <div class="left-col">${leftHtml}</div>
+            <div class="right-col">${rightHtml}</div>
+        </div>
+    `;
 
 }
 
