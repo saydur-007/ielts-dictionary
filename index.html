@@ -26,81 +26,124 @@ h2{
 }
 
 input{
-
     flex:1;
     padding:12px 15px;
     font-size:16px;
-
     border:none;
     border-radius:10px;
-
     outline:none;
-
 }
 
 button{
-
     padding:12px 22px;
-
     background:#4CAF50;
     color:white;
-
     border:none;
-
     border-radius:10px;
-
     font-size:15px;
-
     cursor:pointer;
-
     transition:.25s;
-
 }
 
 button:hover{
-
     background:#45a049;
+}
 
+button:disabled{
+    background:#666;
+    cursor:not-allowed;
 }
 
 #result{
-
     margin-top:20px;
-
     line-height:1.8;
-
 }
 
 hr{
-
     border:0;
-
     border-top:1px solid #444;
-
     margin:18px 0;
-
 }
 
 h3{
-
     color:#FFC107;
-
 }
 
 .loading{
-
     color:#4CAF50;
+}
 
+.word-title{
+    font-size:28px;
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+.phonetic{
+    color:#9aa0a6;
+    font-size:16px;
+    margin-bottom:10px;
+}
+
+.pos{
+    display:inline-block;
+    background:#4CAF50;
+    color:white;
+    padding:3px 10px;
+    border-radius:6px;
+    font-size:13px;
+    font-style:italic;
+    margin:10px 0 6px 0;
+}
+
+.def-item{
+    margin:8px 0 8px 20px;
+}
+
+.def-number{
+    color:#FFC107;
+    font-weight:bold;
+    margin-right:6px;
+}
+
+.example{
+    color:#9aa0a6;
+    font-style:italic;
+    margin-left:26px;
+}
+
+.synonyms{
+    margin-left:26px;
+    color:#8ab4f8;
+    font-size:14px;
+}
+
+.error-box{
+    text-align:center;
+    color:#f28b82;
+}
+
+.play-btn{
+    background:#2f9e44;
 }
 </style>
-
 </head>
+
 <body>
 
-<h2>Dictionary</h2>
+<h2>📖 Dictionary</h2>
 
-<input id="word" placeholder="Enter a word">
-<button onclick="searchWord()">Search</button>
+<div class="search-box">
+    <input
+        id="word"
+        type="text"
+        placeholder="Search a word..."
+    >
+
+    <button id="searchBtn">
+        Search
+    </button>
+</div>
 
 <div id="result"></div>
 
@@ -109,113 +152,128 @@ const input = document.getElementById("word");
 const button = document.getElementById("searchBtn");
 const result = document.getElementById("result");
 
+let currentAudio = null;
+
+// Search button
 button.addEventListener("click", searchWord);
 
-input.addEventListener("keypress", function(e){
-
-    if(e.key==="Enter"){
-
-        e.preventDefault();
-
+// Enter key
+input.addEventListener("keyup", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
         searchWord();
-
     }
-
 });
 
-async function searchWord(){
+// Auto focus
+window.onload = function () {
+    input.focus();
+};
 
-    const word=input.value.trim();
+async function searchWord() {
 
-    if(word===""){
+    const word = input.value.trim();
 
-        result.innerHTML="<p>Please enter a word.</p>";
+    if (!word) return;
 
-        return;
+    result.innerHTML = '<p class="loading">🔍 Searching...</p>';
 
-    }
+    try {
 
-    result.innerHTML="<p class='loading'>🔍 Searching...</p>";
-
-    try{
-
-        const response=await fetch(
+        const response = await fetch(
             `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
         );
 
-        if(!response.ok){
-
+        if (!response.ok) {
             throw new Error();
-
         }
 
-        const data=await response.json();
+        const data = await response.json();
 
-        const d=data[0];
+        renderResult(data[0]);
 
-        let html="";
+    } catch {
 
-        html+=`<h2>${d.word}</h2>`;
-
-        if(d.phonetic){
-
-            html+=`<p><b>Pronunciation:</b> ${d.phonetic}</p>`;
-
-        }
-
-        const audio=d.phonetics.find(x=>x.audio);
-
-        if(audio){
-
-            html+=`
-            <button onclick="new Audio('${audio.audio}').play()">
-            🔊 Play Pronunciation
-            </button><br><br>
-            `;
-
-        }
-
-        d.meanings.forEach(m=>{
-
-            html+=`<hr>`;
-
-            html+=`<h3>${m.partOfSpeech}</h3>`;
-
-            html+=`<p><b>Meaning:</b><br>${m.definitions[0].definition}</p>`;
-
-            if(m.definitions[0].example){
-
-                html+=`<p><b>Example:</b><br>${m.definitions[0].example}</p>`;
-
-            }
-
-            if(m.synonyms.length){
-
-                html+=`<p><b>Synonyms:</b><br>${m.synonyms.slice(0,10).join(", ")}</p>`;
-
-            }
-
-            if(m.antonyms.length){
-
-                html+=`<p><b>Antonyms:</b><br>${m.antonyms.slice(0,10).join(", ")}</p>`;
-
-            }
-
-        });
-
-        result.innerHTML=html;
-
-    }
-
-    catch{
-
-        result.innerHTML=`
-        <h2>❌ Word Not Found</h2>
-        <p>Please check your spelling.</p>
+        result.innerHTML = `
+            <div class="error-box">
+                <h2>❌ Word Not Found</h2>
+                <p>Please check your spelling.</p>
+            </div>
         `;
 
     }
 
+}
+
+function renderResult(entry) {
+
+    const wordText = entry.word || "";
+
+    // Find a phonetic text, preferring one that has an audio file too
+    let phoneticText = entry.phonetic || "";
+    let audioUrl = "";
+
+    if (Array.isArray(entry.phonetics)) {
+        for (const p of entry.phonetics) {
+            if (!phoneticText && p.text) phoneticText = p.text;
+            if (!audioUrl && p.audio) audioUrl = p.audio;
+        }
+    }
+
+    let html = `<div class="word-title">${escapeHtml(wordText)}</div>`;
+
+    if (phoneticText) {
+        html += `<div class="phonetic">Pronunciation: ${escapeHtml(phoneticText)}</div>`;
+    }
+
+    if (audioUrl) {
+        html += `<button class="play-btn" onclick="playAudio('${audioUrl.replace(/'/g, "\\'")}')">🔊 Play Pronunciation</button>`;
+    }
+
+    if (Array.isArray(entry.meanings)) {
+        entry.meanings.forEach(meaning => {
+
+            html += `<hr><div class="pos">${escapeHtml(meaning.partOfSpeech || "")}</div>`;
+
+            if (Array.isArray(meaning.definitions)) {
+                meaning.definitions.slice(0, 4).forEach((def, i) => {
+
+                    html += `<div class="def-item"><span class="def-number">${i + 1}.</span>${escapeHtml(def.definition || "")}</div>`;
+
+                    if (def.example) {
+                        html += `<div class="example">e.g. "${escapeHtml(def.example)}"</div>`;
+                    }
+
+                });
+            }
+
+            if (Array.isArray(meaning.synonyms) && meaning.synonyms.length > 0) {
+                html += `<div class="synonyms">Synonyms: ${meaning.synonyms.slice(0, 6).map(escapeHtml).join(", ")}</div>`;
+            }
+
+        });
+    }
+
+    result.innerHTML = html;
+
+}
+
+function playAudio(url) {
+    if (currentAudio) {
+        currentAudio.pause();
+    }
+    currentAudio = new Audio(url);
+    currentAudio.play();
+}
+
+function escapeHtml(str) {
+    if (typeof str !== "string") return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 </script>
 
