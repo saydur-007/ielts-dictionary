@@ -1,143 +1,637 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>IELTS Dictionary</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Vocabulary Widget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
+:root{
+    --bg:#0b0d10;
+    --bg-glow:#12291a;
+    --glass:rgba(255,255,255,0.045);
+    --glass-border:rgba(255,255,255,0.08);
+    --glass-hover:rgba(255,255,255,0.07);
+    --text:#e8eaed;
+    --text-dim:#9aa0a6;
+    --text-faint:#6b7076;
+    --accent:#4CAF50;
+    --accent-soft:rgba(76,175,80,0.15);
+    --accent-glow:rgba(76,175,80,0.35);
+    --blue:#8ab4f8;
+    --blue-soft:rgba(138,180,248,0.12);
+    --red:#f28b82;
+    --red-soft:rgba(242,139,130,0.12);
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 8px 30px rgba(0,0,0,0.35);
+}
+
+*{ box-sizing:border-box; }
+
+html, body{
+    max-width:100%;
+    overflow-x:hidden;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
 body{
     margin:0;
-    padding:25px;
-    font-family:Arial,sans-serif;
-    background:#202124;
-    color:white;
+    padding:0;
+    font-family:'Inter',Arial,sans-serif;
+    color:var(--text);
+    background:
+        radial-gradient(720px 360px at 15% -10%, var(--bg-glow), transparent 60%),
+        radial-gradient(600px 300px at 100% 0%, rgba(76,175,80,0.08), transparent 55%),
+        var(--bg);
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
 }
 
-.container{
-    max-width:100%;
+.app{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 20px 40px 20px;
 }
 
-.search-box{
+/* ---------- Sticky header ---------- */
+.topbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    padding:16px 20px 14px 20px;
+    margin:0 -20px;
+    background:rgba(11,13,16,0.72);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--glass-border);
+}
+
+.search-row{
     display:flex;
-    gap:12px;
+    gap:10px;
     align-items:center;
-    margin-bottom:20px;
 }
 
-input{
+.search-field{
     flex:1;
-    padding:12px 15px;
-    font-size:16px;
-    border:none;
-    border-radius:10px;
-    outline:none;
+    position:relative;
+    display:flex;
+    align-items:center;
+    min-width:0;
 }
 
-button{
-    padding:12px 22px;
-    background:#4CAF50;
-    color:white;
-    border:none;
-    border-radius:10px;
+.search-field svg.search-icon{
+    position:absolute;
+    left:14px;
+    width:18px;
+    height:18px;
+    color:var(--text-faint);
+    pointer-events:none;
+}
+
+input#word{
+    width:100%;
+    padding:13px 40px 13px 42px;
     font-size:15px;
+    font-family:inherit;
+    color:var(--text);
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius-sm);
+    outline:none;
+    transition:border-color .2s, background .2s;
+}
+
+input#word:focus{
+    border-color:var(--accent);
+    background:rgba(255,255,255,0.06);
+}
+
+input#word::placeholder{
+    color:var(--text-faint);
+}
+
+.clear-btn{
+    position:absolute;
+    right:8px;
+    width:26px;
+    height:26px;
+    border:none;
+    border-radius:50%;
+    background:transparent;
+    color:var(--text-faint);
     cursor:pointer;
-    transition:.25s;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+    transition:background .15s, color .15s;
 }
 
-button:hover{
-    background:#45a049;
+.clear-btn:hover{
+    background:rgba(255,255,255,0.08);
+    color:var(--text);
 }
 
-button:disabled{
-    background:#666;
+.clear-btn.visible{ display:flex; }
+
+button.primary{
+    padding:13px 24px;
+    font-family:inherit;
+    font-size:15px;
+    font-weight:600;
+    color:#0b0d10;
+    background:var(--accent);
+    border:none;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    white-space:nowrap;
+    box-shadow:0 4px 18px var(--accent-glow);
+    transition:transform .15s, box-shadow .15s, background .15s;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+button.primary:hover{
+    background:#5cc161;
+    transform:translateY(-1px);
+    box-shadow:0 6px 22px var(--accent-glow);
+}
+
+button.primary:active{
+    transform:translateY(0);
+}
+
+button.primary:disabled{
+    background:#3a3d40;
+    color:var(--text-faint);
+    box-shadow:none;
     cursor:not-allowed;
+    transform:none;
 }
 
+.spinner{
+    width:16px;
+    height:16px;
+    border:2px solid rgba(11,13,16,0.35);
+    border-top-color:#0b0d10;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    display:none;
+}
+
+button.primary.loading .spinner{ display:inline-block; }
+button.primary.loading .btn-label{ display:none; }
+
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* quick action row */
+.quick-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin-top:12px;
+}
+
+.chip-btn{
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--text-dim);
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:999px;
+    padding:7px 13px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:background .15s, color .15s, border-color .15s;
+    white-space:nowrap;
+}
+
+.chip-btn:hover{
+    background:var(--glass-hover);
+    color:var(--text);
+    border-color:rgba(255,255,255,0.16);
+}
+
+.chip-btn.active{
+    background:var(--accent-soft);
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.counter-chip{
+    margin-left:auto;
+    font-size:12px;
+    color:var(--text-faint);
+    padding:6px 4px;
+}
+
+/* recent searches */
+.recent-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+}
+
+.recent-row.hidden{ display:none; }
+
+.recent-chip{
+    font-family:inherit;
+    font-size:12.5px;
+    color:var(--text-dim);
+    background:transparent;
+    border:1px solid var(--glass-border);
+    border-radius:999px;
+    padding:5px 12px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+}
+
+.recent-chip:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+/* daily word banner */
+.daily-banner{
+    margin-top:26px;
+    padding:16px 20px;
+    border-radius:var(--radius);
+    background:linear-gradient(135deg, rgba(76,175,80,0.12), rgba(76,175,80,0.03));
+    border:1px solid rgba(76,175,80,0.25);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+}
+
+.daily-banner .label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--accent);
+    font-weight:700;
+    margin-bottom:4px;
+}
+
+.daily-banner .word{
+    font-size:20px;
+    font-weight:700;
+}
+
+.daily-banner button{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    color:var(--accent);
+    background:rgba(76,175,80,0.12);
+    border:1px solid rgba(76,175,80,0.3);
+    border-radius:999px;
+    padding:8px 16px;
+    cursor:pointer;
+    transition:background .15s;
+}
+
+.daily-banner button:hover{
+    background:rgba(76,175,80,0.22);
+}
+
+/* ---------- Favorites drawer ---------- */
+.fav-drawer{
+    margin-top:14px;
+    padding:16px 18px;
+    border-radius:var(--radius);
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    display:none;
+}
+
+.fav-drawer.open{ display:block; }
+
+.fav-drawer h4{
+    margin:0 0 10px 0;
+    font-size:13px;
+    color:var(--text-dim);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+}
+
+.fav-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+.fav-empty{
+    color:var(--text-faint);
+    font-size:13px;
+}
+
+.fav-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--glass-border);
+    border-radius:999px;
+    padding:6px 6px 6px 13px;
+    font-size:13px;
+}
+
+.fav-item button{
+    background:none;
+    border:none;
+    color:var(--text-faint);
+    cursor:pointer;
+    font-size:13px;
+    padding:4px 8px;
+    border-radius:50%;
+    transition:color .15s, background .15s;
+}
+
+.fav-item button:hover{
+    color:var(--red);
+    background:rgba(242,139,130,0.12);
+}
+
+/* ---------- Result area ---------- */
 #result{
-    margin-top:20px;
-    line-height:1.8;
+    margin-top:24px;
+}
+
+.state-box{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--text-dim);
+}
+
+.state-box.error h3{
+    color:var(--red);
+    margin-bottom:6px;
 }
 
 .result-grid{
     display:grid;
     grid-template-columns:300px 1fr;
-    gap:32px;
+    gap:26px;
+    animation:fadeIn .35s ease;
 }
 
-.left-col{
-    min-width:0;
-}
-
-.right-col{
-    min-width:0;
+@keyframes fadeIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
 }
 
 @media (max-width:700px){
-    .result-grid{
-        grid-template-columns:1fr;
-    }
+    .result-grid{ grid-template-columns:1fr; }
 }
 
-hr{
-    border:0;
-    border-top:1px solid #444;
-    margin:18px 0;
+.glass-card{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    box-shadow:var(--shadow);
+    transition:border-color .2s, transform .2s;
 }
 
-h3{
-    color:#FFC107;
+.glass-card:hover{
+    border-color:rgba(255,255,255,0.14);
 }
 
-.loading{
-    color:#4CAF50;
+.left-col, .right-col{ min-width:0; }
+
+.left-col > .glass-card{ margin-bottom:16px; }
+
+.word-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
 }
 
 .word-title{
-    font-size:28px;
-    font-weight:bold;
-    margin-bottom:5px;
+    font-size:30px;
+    font-weight:800;
+    letter-spacing:-0.02em;
 }
 
-.phonetic{
-    color:#9aa0a6;
-    font-size:16px;
-    margin-bottom:10px;
+.fav-star{
+    background:none;
+    border:none;
+    font-size:22px;
+    color:var(--text-faint);
+    cursor:pointer;
+    line-height:1;
+    transition:color .15s, transform .15s;
+    flex-shrink:0;
 }
 
-.pos{
-    display:inline-block;
-    background:#4CAF50;
-    color:white;
-    padding:3px 10px;
-    border-radius:6px;
-    font-size:13px;
-    font-style:italic;
-    margin:10px 0 6px 0;
+.fav-star:hover{ transform:scale(1.12); }
+.fav-star.active{ color:#ffd54f; }
+
+.phonetic-main{
+    color:var(--text-dim);
+    font-size:15px;
+    margin-top:4px;
 }
 
+.accent-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+}
+
+.accent-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--glass-border);
+    border-radius:999px;
+    padding:6px 12px 6px 8px;
+    font-size:12.5px;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+}
+
+.accent-pill:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.accent-pill .tag-code{
+    font-weight:700;
+    font-size:11px;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border-radius:5px;
+    padding:2px 6px;
+}
+
+.bangla{
+    margin-top:14px;
+    font-size:17px;
+    color:var(--blue);
+    font-family:'Noto Sans Bengali','Nirmala UI',Arial,sans-serif;
+    padding-top:14px;
+    border-top:1px solid var(--glass-border);
+}
+
+.bangla-label{
+    color:var(--text-faint);
+    font-size:12px;
+    display:block;
+    margin-bottom:4px;
+    font-family:'Inter',Arial,sans-serif;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+}
+
+.word-image-wrap{
+    padding:0;
+    overflow:hidden;
+}
+
+.word-image{
+    width:100%;
+    display:block;
+    object-fit:cover;
+    max-height:220px;
+}
+
+.image-credit{
+    font-size:11px;
+    color:var(--text-faint);
+    padding:8px 14px;
+}
+
+/* practice sentence - signature card */
+.sentence-card{
+    position:relative;
+    background:linear-gradient(160deg, rgba(76,175,80,0.10), rgba(76,175,80,0.02));
+    border:1px solid rgba(76,175,80,0.28);
+    border-left:3px solid var(--accent);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin-bottom:18px;
+    box-shadow:0 8px 28px rgba(76,175,80,0.08);
+}
+
+.sentence-label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--accent);
+    font-weight:700;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.sentence-text{
+    font-size:16.5px;
+    line-height:1.55;
+    color:var(--text);
+}
+
+.sentence-text b{
+    color:var(--accent);
+    font-weight:700;
+}
+
+.card-actions{
+    display:flex;
+    gap:8px;
+    margin-top:12px;
+}
+
+.mini-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-dim);
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--glass-border);
+    border-radius:8px;
+    padding:6px 12px;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+}
+
+.mini-btn:hover{
+    background:rgba(255,255,255,0.09);
+    color:var(--text);
+}
+
+.mini-btn.copied{
+    color:var(--accent);
+    border-color:var(--accent);
+}
+
+/* meanings */
 .meaning-block{
     margin-bottom:18px;
 }
 
+.pos{
+    display:inline-block;
+    background:var(--accent-soft);
+    color:var(--accent);
+    padding:4px 12px;
+    border-radius:6px;
+    font-size:12.5px;
+    font-weight:700;
+    font-style:italic;
+    margin-bottom:10px;
+}
+
 .def-item{
-    background:#2a2b2e;
-    border-left:3px solid #4CAF50;
-    border-radius:8px;
-    padding:10px 14px;
+    background:rgba(255,255,255,0.03);
+    border-left:3px solid var(--accent);
+    border-radius:10px;
+    padding:12px 15px;
     margin:8px 0;
+    transition:background .15s;
+}
+
+.def-item:hover{
+    background:rgba(255,255,255,0.05);
 }
 
 .def-number{
-    color:#FFC107;
-    font-weight:bold;
+    color:#ffc107;
+    font-weight:700;
     margin-right:6px;
 }
 
 .example{
-    color:#9aa0a6;
+    color:var(--text-dim);
     font-style:italic;
-    font-size:14px;
-    margin-top:6px;
+    font-size:13.5px;
+    margin-top:7px;
     padding-left:2px;
 }
 
@@ -150,97 +644,273 @@ h3{
 }
 
 .tag-label{
-    color:#9aa0a6;
+    color:var(--text-faint);
     font-size:12px;
     margin-right:2px;
 }
 
 .tag{
     display:inline-block;
-    padding:3px 10px;
-    border-radius:12px;
+    padding:4px 11px;
+    border-radius:999px;
     font-size:12px;
-    background:#1f2a3d;
-    color:#8ab4f8;
+    background:var(--blue-soft);
+    color:var(--blue);
 }
 
 .tag.antonym{
-    background:#3d1f1f;
-    color:#f28b82;
+    background:var(--red-soft);
+    color:var(--red);
 }
 
-.error-box{
-    text-align:center;
-    color:#f28b82;
+hr.divider{
+    border:0;
+    border-top:1px solid var(--glass-border);
+    margin:18px 0;
 }
 
-.play-btn{
-    background:#2f9e44;
+/* footer meta row inside right col */
+.meta-actions{
+    display:flex;
+    gap:8px;
+    margin:4px 0 18px 0;
+    flex-wrap:wrap;
 }
 
-.bangla{
-    margin-top:6px;
-    font-size:17px;
-    color:#a5d6ff;
-    font-family:'Noto Sans Bengali','Nirmala UI',Arial,sans-serif;
+@media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
 }
 
-.bangla-label{
-    color:#9aa0a6;
-    font-size:13px;
-    margin-right:6px;
-    font-family:Arial,sans-serif;
-}
-
-.word-image{
-    width:100%;
-    border-radius:10px;
-    margin:12px 0;
-    display:block;
-    object-fit:cover;
-}
-
-.image-credit{
-    font-size:11px;
-    color:#666;
-    margin-top:-8px;
-    margin-bottom:12px;
+@media (max-width:520px){
+    .word-title{ font-size:24px; }
+    .search-row{ flex-wrap:wrap; }
+    button.primary{ padding:12px 18px; }
 }
 </style>
 </head>
 
 <body>
+<div class="app">
 
-<div class="container">
+    <div class="topbar">
+        <div class="search-row">
+            <div class="search-field">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input id="word" type="text" placeholder="Search a word (English or বাংলা)..." autocomplete="off">
+                <button class="clear-btn" id="clearBtn" title="Clear">✕</button>
+            </div>
+            <button class="primary" id="searchBtn">
+                <span class="spinner"></span>
+                <span class="btn-label">Search</span>
+            </button>
+        </div>
 
-<div class="search-box">
-    <input
-        id="word"
-        type="text"
-        placeholder="Search a word (English or বাংলা)..."
-    >
+        <div class="quick-row">
+            <button class="chip-btn" id="randomBtn">🎲 Random word</button>
+            <button class="chip-btn" id="favToggleBtn">⭐ Favorites <span id="favCount"></span></button>
+            <span class="counter-chip" id="wordCounter"></span>
+        </div>
 
-    <button id="searchBtn">
-        Search
-    </button>
-</div>
+        <div class="recent-row hidden" id="recentRow"></div>
+    </div>
 
-<div id="result"></div>
+    <div class="daily-banner" id="dailyBanner">
+        <div>
+            <div class="label">📅 Daily IELTS word</div>
+            <div class="word" id="dailyWord">—</div>
+        </div>
+        <button id="dailyLearnBtn">Learn this word</button>
+    </div>
+
+    <div class="fav-drawer" id="favDrawer">
+        <h4>Favorite words</h4>
+        <div class="fav-list" id="favList"></div>
+    </div>
+
+    <div id="result"></div>
 
 </div>
 
 <script>
-const input = document.getElementById("word");
-const button = document.getElementById("searchBtn");
-const result = document.getElementById("result");
+/* ============================================================
+   State & DOM refs
+============================================================ */
+const input        = document.getElementById("word");
+const button        = document.getElementById("searchBtn");
+const clearBtn       = document.getElementById("clearBtn");
+const result         = document.getElementById("result");
+const recentRow      = document.getElementById("recentRow");
+const favToggleBtn   = document.getElementById("favToggleBtn");
+const favDrawer      = document.getElementById("favDrawer");
+const favList        = document.getElementById("favList");
+const favCount       = document.getElementById("favCount");
+const wordCounterEl  = document.getElementById("wordCounter");
+const dailyWordEl    = document.getElementById("dailyWord");
+const dailyLearnBtn  = document.getElementById("dailyLearnBtn");
+const randomBtn      = document.getElementById("randomBtn");
 
 let currentAudio = null;
+let currentEntry = null; // { word, banglaText, meanings, sentence }
 
-// Search button
+const LS_HISTORY  = "ielts_history";
+const LS_FAVS     = "ielts_favorites";
+const LS_COUNT    = "ielts_word_count";
+
+/* Curated IELTS-band vocabulary for Daily Word / Random Word */
+const IELTS_WORDS = [
+"abundant","meticulous","ubiquitous","pragmatic","resilient","substantial",
+"inevitable","controversial","phenomenon","ambiguous","comprehensive","deteriorate",
+"exemplify","feasible","hinder","implement","notion","plausible","robust",
+"significant","sustainable","tremendous","versatile","alleviate","coherent",
+"denote","elaborate","facilitate","gradual","hypothesis","illustrate","justify",
+"notable","obsolete","precede","rigorous","subsequent","tangible","undermine",
+"viable","adverse","coincide","discrepancy","empirical","fluctuate","holistic",
+"inherent","mitigate","nuance","optimal","prevalent","quantify","scrutinize",
+"thorough","unprecedented","valid","arbitrary","cumulative","diminish","evident",
+"integral","lucrative","momentum","paramount","rationale","stringent"
+];
+
+/* ============================================================
+   localStorage helpers (safe wrappers)
+============================================================ */
+function lsGet(key, fallback){
+    try{
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    }catch{
+        return fallback;
+    }
+}
+
+function lsSet(key, value){
+    try{
+        localStorage.setItem(key, JSON.stringify(value));
+    }catch{
+        /* storage unavailable (e.g. blocked in strict iframe) - fail silently */
+    }
+}
+
+/* ============================================================
+   Init: daily word, counter, history, favorites
+============================================================ */
+function dayOfYear(){
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now - start;
+    return Math.floor(diff / 86400000);
+}
+
+function renderDailyWord(){
+    const idx = dayOfYear() % IELTS_WORDS.length;
+    dailyWordEl.textContent = IELTS_WORDS[idx];
+}
+
+function renderCounter(){
+    const count = lsGet(LS_COUNT, 0);
+    wordCounterEl.textContent = count > 0 ? `${count} word${count === 1 ? "" : "s"} searched` : "";
+}
+
+function bumpCounter(){
+    const count = lsGet(LS_COUNT, 0) + 1;
+    lsSet(LS_COUNT, count);
+    renderCounter();
+}
+
+function renderRecent(){
+    const history = lsGet(LS_HISTORY, []);
+    if (history.length === 0){
+        recentRow.classList.add("hidden");
+        recentRow.innerHTML = "";
+        return;
+    }
+    recentRow.classList.remove("hidden");
+    recentRow.innerHTML = history.slice(0, 10).map(w =>
+        `<button class="recent-chip" data-word="${escapeHtml(w)}">${escapeHtml(w)}</button>`
+    ).join("");
+
+    recentRow.querySelectorAll(".recent-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            input.value = chip.dataset.word;
+            searchWord();
+        });
+    });
+}
+
+function pushHistory(word){
+    let history = lsGet(LS_HISTORY, []);
+    history = history.filter(w => w.toLowerCase() !== word.toLowerCase());
+    history.unshift(word);
+    history = history.slice(0, 30);
+    lsSet(LS_HISTORY, history);
+    renderRecent();
+}
+
+function getFavorites(){
+    return lsGet(LS_FAVS, []);
+}
+
+function isFavorite(word){
+    return getFavorites().some(f => f.word.toLowerCase() === word.toLowerCase());
+}
+
+function toggleFavorite(word, banglaText){
+    let favs = getFavorites();
+    const exists = favs.some(f => f.word.toLowerCase() === word.toLowerCase());
+    if (exists){
+        favs = favs.filter(f => f.word.toLowerCase() !== word.toLowerCase());
+    }else{
+        favs.unshift({ word, banglaText: banglaText || "" });
+    }
+    lsSet(LS_FAVS, favs);
+    renderFavorites();
+    updateFavStarState();
+}
+
+function renderFavorites(){
+    const favs = getFavorites();
+    favCount.textContent = favs.length > 0 ? `(${favs.length})` : "";
+
+    if (favs.length === 0){
+        favList.innerHTML = `<div class="fav-empty">No favorites yet — tap the ⭐ on a searched word to save it.</div>`;
+        return;
+    }
+
+    favList.innerHTML = favs.map(f => `
+        <div class="fav-item">
+            <span class="fav-word" data-word="${escapeHtml(f.word)}" style="cursor:pointer;">${escapeHtml(f.word)}</span>
+            <button data-remove="${escapeHtml(f.word)}" title="Remove">✕</button>
+        </div>
+    `).join("");
+
+    favList.querySelectorAll(".fav-word").forEach(el => {
+        el.addEventListener("click", () => {
+            input.value = el.dataset.word;
+            searchWord();
+        });
+    });
+
+    favList.querySelectorAll("[data-remove]").forEach(el => {
+        el.addEventListener("click", () => {
+            toggleFavorite(el.dataset.remove);
+        });
+    });
+}
+
+function updateFavStarState(){
+    const star = document.getElementById("favStarBtn");
+    if (!star || !currentEntry) return;
+    star.classList.toggle("active", isFavorite(currentEntry.word));
+    star.textContent = isFavorite(currentEntry.word) ? "★" : "☆";
+}
+
+/* ============================================================
+   Search bar interactions
+============================================================ */
 button.addEventListener("click", searchWord);
 
-// Enter key - use keydown so it fires reliably, and stop it from
-// bubbling up (some embed hosts like Notion can otherwise swallow it)
 input.addEventListener("keydown", function (event) {
     if (event.key === "Enter" || event.keyCode === 13) {
         event.preventDefault();
@@ -249,24 +919,64 @@ input.addEventListener("keydown", function (event) {
     }
 });
 
-// Auto focus
-window.onload = function () {
-    input.focus();
-};
+input.addEventListener("input", () => {
+    clearBtn.classList.toggle("visible", input.value.length > 0);
+});
 
-// Detect Bangla script (Unicode block U+0980–U+09FF)
+clearBtn.addEventListener("click", () => {
+    input.value = "";
+    clearBtn.classList.remove("visible");
+    input.focus();
+});
+
+window.addEventListener("load", () => {
+    input.focus();
+    renderDailyWord();
+    renderCounter();
+    renderRecent();
+    renderFavorites();
+});
+
+dailyLearnBtn.addEventListener("click", () => {
+    input.value = dailyWordEl.textContent;
+    searchWord();
+});
+
+randomBtn.addEventListener("click", () => {
+    const pick = IELTS_WORDS[Math.floor(Math.random() * IELTS_WORDS.length)];
+    input.value = pick;
+    searchWord();
+});
+
+favToggleBtn.addEventListener("click", () => {
+    favDrawer.classList.toggle("open");
+    favToggleBtn.classList.toggle("active", favDrawer.classList.contains("open"));
+});
+
+/* ============================================================
+   Bangla detection + core search flow
+============================================================ */
 function isBangla(text) {
     return /[\u0980-\u09FF]/.test(text);
+}
+
+function setLoading(isLoading){
+    button.disabled = isLoading;
+    button.classList.toggle("loading", isLoading);
 }
 
 async function searchWord() {
 
     const rawInput = input.value.trim();
-
     if (!rawInput) return;
 
-    button.disabled = true;
-    result.innerHTML = '<p class="loading">🔍 Searching...</p>';
+    setLoading(true);
+    result.innerHTML = `
+        <div class="state-box">
+            <div class="spinner" style="display:inline-block;width:22px;height:22px;border-color:rgba(255,255,255,0.15);border-top-color:var(--accent);"></div>
+            <p style="margin-top:12px;">Searching…</p>
+        </div>
+    `;
 
     try {
 
@@ -274,7 +984,6 @@ async function searchWord() {
         let banglaText = "";
 
         if (isBangla(rawInput)) {
-            // User typed Bangla -> translate to English first, then look that up
             englishWord = await translateText(rawInput, "bn", "en");
             if (!englishWord) throw new Error();
             banglaText = rawInput;
@@ -284,42 +993,35 @@ async function searchWord() {
             `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(englishWord)}`
         );
 
-        if (!response.ok) {
-            throw new Error();
-        }
+        if (!response.ok) throw new Error();
 
         const data = await response.json();
 
-        // If we started from English, still fetch the Bangla translation for display.
-        // If we started from Bangla, we already have it (the original input).
         const [banglaFinal, imageInfo] = await Promise.all([
             banglaText ? Promise.resolve(banglaText) : translateText(englishWord, "en", "bn"),
             fetchImage(englishWord)
         ]);
 
         renderResult(data[0], banglaFinal, imageInfo);
+        pushHistory(data[0].word || englishWord);
+        bumpCounter();
 
     } catch {
 
         result.innerHTML = `
-            <div class="error-box">
-                <h2>❌ Word Not Found</h2>
-                <p>Please check your spelling.</p>
+            <div class="state-box error">
+                <h3>❌ Word not found</h3>
+                <p>Please check the spelling and try again.</p>
             </div>
         `;
 
     } finally {
-        button.disabled = false;
+        setLoading(false);
     }
 
 }
 
-// Generic translator: sl = source language, tl = target language (e.g. "en", "bn")
 async function translateText(text, sl, tl) {
-
-    // Primary source: Google Translate's public endpoint.
-    // Much more reliable for single common words than MyMemory,
-    // which can return unrelated stored phrases from its shared memory.
     try {
         const res = await fetch(
             `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`
@@ -327,26 +1029,18 @@ async function translateText(text, sl, tl) {
         if (res.ok) {
             const data = await res.json();
             const translated = data && data[0] && data[0][0] && data[0][0][0];
-            if (translated && translated.trim()) {
-                return translated.trim();
-            }
+            if (translated && translated.trim()) return translated.trim();
         }
-    } catch {
-        // fall through to backup source
-    }
+    } catch { /* fall through */ }
 
-    // Fallback: MyMemory (kept as backup in case Google endpoint is blocked)
     try {
         const res = await fetch(
             `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sl}|${tl}`
         );
         if (!res.ok) return "";
         const data = await res.json();
-        const result = (data && data.responseData && data.responseData.translatedText) || "";
-        // Skip obviously bad matches (MyMemory sometimes echoes the input back untranslated)
-        if (result && result.toLowerCase().trim() !== text.toLowerCase().trim()) {
-            return result;
-        }
+        const out = (data && data.responseData && data.responseData.translatedText) || "";
+        if (out && out.toLowerCase().trim() !== text.toLowerCase().trim()) return out;
         return "";
     } catch {
         return "";
@@ -373,67 +1067,178 @@ async function fetchImage(word) {
     }
 }
 
+/* ============================================================
+   Practice sentence generator (template-based, no external API)
+============================================================ */
+const SENTENCE_TEMPLATES = {
+    noun: [
+        "The {word} played a key role in the country's recent development.",
+        "Researchers pointed to {word} as a major factor behind the change.",
+        "Many experts consider {word} essential to a modern education system."
+    ],
+    verb: [
+        "The new policy aims to {word} economic growth in rural areas.",
+        "Scientists continue to {word} the long-term effects of climate change.",
+        "Local authorities decided to {word} the plan after months of review."
+    ],
+    adjective: [
+        "The government's approach proved to be {word} in tackling the issue.",
+        "Her analysis of the report was remarkably {word}.",
+        "It is {word} for students to manage their study time effectively."
+    ],
+    adverb: [
+        "The committee reviewed the proposal {word} before reaching a decision.",
+        "The plan was implemented {word} across all departments.",
+        "Officials responded {word} to the public's concerns."
+    ],
+    default: [
+        "The word \"{word}\" is often used in academic and IELTS writing.",
+        "Understanding \"{word}\" can help you sound more precise in essays.",
+        "\"{word}\" appears frequently in Band 7+ IELTS responses."
+    ]
+};
+
+function generateSentence(word, partOfSpeech){
+    const pos = (partOfSpeech || "").toLowerCase();
+    const key = SENTENCE_TEMPLATES[pos] ? pos : "default";
+    const templates = SENTENCE_TEMPLATES[key];
+    // deterministic pick based on word length + first char code, so it stays
+    // consistent for the same word across searches within a session
+    const seed = (word.length + word.charCodeAt(0)) % templates.length;
+    return templates[seed].replace("{word}", word);
+}
+
+/* ============================================================
+   Clipboard helpers
+============================================================ */
+async function copyText(text, btnEl){
+    try{
+        await navigator.clipboard.writeText(text);
+    }catch{
+        // Fallback for iframes that block the async clipboard API
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try{ document.execCommand("copy"); }catch{ /* no-op */ }
+        document.body.removeChild(ta);
+    }
+    if (btnEl){
+        const original = btnEl.textContent;
+        btnEl.textContent = "✓ Copied";
+        btnEl.classList.add("copied");
+        setTimeout(() => {
+            btnEl.textContent = original;
+            btnEl.classList.remove("copied");
+        }, 1500);
+    }
+}
+
+/* ============================================================
+   Render result
+============================================================ */
 function renderResult(entry, banglaText, imageInfo) {
 
     const wordText = entry.word || "";
 
-    // Find a phonetic text, preferring one that has an audio file too
     let phoneticText = entry.phonetic || "";
-    let audioUrl = "";
+    const accentPills = [];
 
     if (Array.isArray(entry.phonetics)) {
-        for (const p of entry.phonetics) {
+        entry.phonetics.forEach(p => {
             if (!phoneticText && p.text) phoneticText = p.text;
-            if (!audioUrl && p.audio) audioUrl = p.audio;
-        }
+            if (p.audio) {
+                let label = "Audio";
+                if (/-uk\.mp3/i.test(p.audio)) label = "UK";
+                else if (/-us\.mp3/i.test(p.audio)) label = "US";
+                else if (/-au\.mp3/i.test(p.audio)) label = "AU";
+                accentPills.push({ label, text: p.text || phoneticText, audio: p.audio });
+            }
+        });
     }
 
-    let leftHtml = `<div class="word-title">${escapeHtml(wordText)}</div>`;
+    // de-dupe accent pills by label, keep first of each
+    const seenLabels = new Set();
+    const uniqueAccents = accentPills.filter(a => {
+        if (seenLabels.has(a.label)) return false;
+        seenLabels.add(a.label);
+        return true;
+    }).slice(0, 4);
+
+    const firstPos = (entry.meanings && entry.meanings[0] && entry.meanings[0].partOfSpeech) || "";
+    const sentence = generateSentence(wordText, firstPos);
+
+    currentEntry = { word: wordText, banglaText, sentence };
+
+    /* ---------- LEFT COLUMN ---------- */
+    let leftHtml = `<div class="glass-card">`;
+    leftHtml += `<div class="word-head">`;
+    leftHtml += `<div class="word-title">${escapeHtml(wordText)}</div>`;
+    leftHtml += `<button class="fav-star" id="favStarBtn" title="Save to favorites">${isFavorite(wordText) ? "★" : "☆"}</button>`;
+    leftHtml += `</div>`;
 
     if (phoneticText) {
-        leftHtml += `<div class="phonetic">Pronunciation: ${escapeHtml(phoneticText)}</div>`;
+        leftHtml += `<div class="phonetic-main">${escapeHtml(phoneticText)}</div>`;
+    }
+
+    if (uniqueAccents.length > 0) {
+        leftHtml += `<div class="accent-row">`;
+        uniqueAccents.forEach((a, i) => {
+            leftHtml += `<div class="accent-pill" data-audio-idx="${i}">
+                <span class="tag-code">${escapeHtml(a.label)}</span>
+                <span>🔊 ${escapeHtml(a.text || "")}</span>
+            </div>`;
+        });
+        leftHtml += `</div>`;
     }
 
     if (banglaText) {
-        leftHtml += `<div class="bangla"><span class="bangla-label">বাংলা:</span>${escapeHtml(banglaText)}</div>`;
+        leftHtml += `<div class="bangla"><span class="bangla-label">বাংলা</span>${escapeHtml(banglaText)}</div>`;
     }
 
-    if (audioUrl) {
-        leftHtml += `<button class="play-btn" onclick="playAudio('${audioUrl.replace(/'/g, "\\'")}')">🔊 Play Pronunciation</button>`;
-    }
+    leftHtml += `</div>`; // close info card
 
     if (imageInfo && imageInfo.url) {
-        leftHtml += `<img class="word-image" src="${escapeHtml(imageInfo.url)}" alt="${escapeHtml(wordText)}" onerror="this.style.display='none'">`;
-        if (imageInfo.credit) {
-            leftHtml += `<div class="image-credit">${escapeHtml(imageInfo.credit)}</div>`;
-        }
+        leftHtml += `<div class="glass-card word-image-wrap">
+            <img class="word-image" src="${escapeHtml(imageInfo.url)}" alt="${escapeHtml(wordText)}" onerror="this.closest('.word-image-wrap').style.display='none'">
+            ${imageInfo.credit ? `<div class="image-credit">${escapeHtml(imageInfo.credit)}</div>` : ""}
+        </div>`;
     }
 
-    let rightHtml = "";
+    /* ---------- RIGHT COLUMN ---------- */
+    let rightHtml = `
+        <div class="sentence-card">
+            <div class="sentence-label">✍️ Practice sentence</div>
+            <div class="sentence-text" id="sentenceText">${buildSentenceHtml(sentence, wordText)}</div>
+            <div class="card-actions">
+                <button class="mini-btn" id="copySentenceBtn">📋 Copy sentence</button>
+            </div>
+        </div>
+    `;
+
+    rightHtml += `<div class="meta-actions">
+        <button class="mini-btn" id="copyMeaningBtn">📋 Copy all meanings</button>
+    </div>`;
 
     if (Array.isArray(entry.meanings)) {
         entry.meanings.forEach((meaning, idx) => {
 
-            if (idx > 0) rightHtml += `<hr>`;
+            if (idx > 0) rightHtml += `<hr class="divider">`;
             rightHtml += `<div class="meaning-block">`;
             rightHtml += `<div class="pos">${escapeHtml(meaning.partOfSpeech || "")}</div>`;
 
             if (Array.isArray(meaning.definitions)) {
                 meaning.definitions.slice(0, 4).forEach((def, i) => {
-
                     rightHtml += `<div class="def-item"><span class="def-number">${i + 1}.</span>${escapeHtml(def.definition || "")}`;
-
                     if (def.example) {
                         rightHtml += `<div class="example">e.g. "${escapeHtml(def.example)}"</div>`;
                     }
-
                     rightHtml += `</div>`;
-
                 });
             }
 
-            // Merge synonyms/antonyms found at both the meaning level and
-            // the individual definition level, de-duplicated.
             const synonyms = collectUnique(meaning, "synonyms");
             const antonyms = collectUnique(meaning, "antonyms");
 
@@ -450,7 +1255,6 @@ function renderResult(entry, banglaText, imageInfo) {
             }
 
             rightHtml += `</div>`;
-
         });
     }
 
@@ -461,17 +1265,48 @@ function renderResult(entry, banglaText, imageInfo) {
         </div>
     `;
 
+    /* wire up dynamic buttons created above */
+    const favStar = document.getElementById("favStarBtn");
+    if (favStar) {
+        favStar.classList.toggle("active", isFavorite(wordText));
+        favStar.addEventListener("click", () => toggleFavorite(wordText, banglaText));
+    }
+
+    uniqueAccents.forEach((a, i) => {
+        const pill = document.querySelector(`.accent-pill[data-audio-idx="${i}"]`);
+        if (pill) pill.addEventListener("click", () => playAudio(a.audio));
+    });
+
+    const copySentenceBtn = document.getElementById("copySentenceBtn");
+    if (copySentenceBtn) {
+        copySentenceBtn.addEventListener("click", () => copyText(sentence, copySentenceBtn));
+    }
+
+    const copyMeaningBtn = document.getElementById("copyMeaningBtn");
+    if (copyMeaningBtn) {
+        const allDefs = (entry.meanings || []).map(m =>
+            `${m.partOfSpeech}: ` + (m.definitions || []).map(d => d.definition).join("; ")
+        ).join("\n");
+        copyMeaningBtn.addEventListener("click", () => copyText(allDefs, copyMeaningBtn));
+    }
 }
 
-// Gathers a de-duplicated list of terms (synonyms/antonyms) from both the
-// meaning level and each individual definition within that meaning.
+function buildSentenceHtml(sentence, word){
+    // bold the searched word wherever it (or its root) appears
+    const escaped = escapeHtml(sentence);
+    const escapedWord = escapeHtml(word);
+    const regex = new RegExp(`(${escapedWord})`, "i");
+    if (regex.test(escaped)) {
+        return escaped.replace(regex, "<b>$1</b>");
+    }
+    return escaped;
+}
+
 function collectUnique(meaning, key) {
     const set = new Set();
-
     if (Array.isArray(meaning[key])) {
         meaning[key].forEach(term => term && set.add(term));
     }
-
     if (Array.isArray(meaning.definitions)) {
         meaning.definitions.forEach(def => {
             if (Array.isArray(def[key])) {
@@ -479,14 +1314,11 @@ function collectUnique(meaning, key) {
             }
         });
     }
-
     return Array.from(set);
 }
 
 function playAudio(url) {
-    if (currentAudio) {
-        currentAudio.pause();
-    }
+    if (currentAudio) currentAudio.pause();
     currentAudio = new Audio(url);
     currentAudio.play();
 }
