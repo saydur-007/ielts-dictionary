@@ -6,35 +6,98 @@
 
 <style>
 body{
+    margin:0;
+    padding:25px;
     font-family:Arial,sans-serif;
     background:#202124;
     color:white;
-    padding:20px;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.search-box{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin-bottom:20px;
 }
 
 input{
-    width:250px;
-    padding:10px;
-    border-radius:8px;
+
+    flex:1;
+    padding:12px 15px;
+    font-size:16px;
+
     border:none;
+    border-radius:10px;
+
+    outline:none;
+
 }
 
 button{
-    padding:10px 20px;
+
+    padding:12px 22px;
+
+    background:#4CAF50;
+    color:white;
+
     border:none;
-    border-radius:8px;
+
+    border-radius:10px;
+
+    font-size:15px;
+
     cursor:pointer;
+
+    transition:.25s;
+
+}
+
+button:hover{
+
+    background:#45a049;
+
 }
 
 #result{
+
     margin-top:20px;
+
+    line-height:1.8;
+
+}
+
+hr{
+
+    border:0;
+
+    border-top:1px solid #444;
+
+    margin:18px 0;
+
+}
+
+h3{
+
+    color:#FFC107;
+
+}
+
+.loading{
+
+    color:#4CAF50;
+
 }
 </style>
 
 </head>
 <body>
 
-<h2>📖 IELTS Dictionary</h2>
+<h2>Dictionary</h2>
 
 <input id="word" placeholder="Enter a word">
 <button onclick="searchWord()">Search</button>
@@ -42,46 +105,116 @@ button{
 <div id="result"></div>
 
 <script>
-async function searchWord(){
+const input = document.getElementById("word");
+const button = document.getElementById("searchBtn");
+const result = document.getElementById("result");
 
-    const word=document.getElementById("word").value;
+button.addEventListener("click", searchWord);
 
-    const response=await fetch(
-        `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
-    );
+input.addEventListener("keypress", function(e){
 
-    const data=await response.json();
+    if(e.key==="Enter"){
 
-    if(data.title){
-        document.getElementById("result").innerHTML="Word not found.";
-        return;
+        e.preventDefault();
+
+        searchWord();
+
     }
 
-    const d=data[0];
+});
 
-    let html="";
+async function searchWord(){
 
-    html+=`<h2>${d.word}</h2>`;
+    const word=input.value.trim();
 
-    if(d.phonetic)
-        html+=`<p><b>Pronunciation:</b> ${d.phonetic}</p>`;
+    if(word===""){
 
-    const meaning=d.meanings[0];
+        result.innerHTML="<p>Please enter a word.</p>";
 
-    html+=`<p><b>Part of Speech:</b> ${meaning.partOfSpeech}</p>`;
+        return;
 
-    html+=`<p><b>Meaning:</b> ${meaning.definitions[0].definition}</p>`;
+    }
 
-    if(meaning.definitions[0].example)
-        html+=`<p><b>Example:</b> ${meaning.definitions[0].example}</p>`;
+    result.innerHTML="<p class='loading'>🔍 Searching...</p>";
 
-    if(meaning.synonyms.length>0)
-        html+=`<p><b>Synonyms:</b> ${meaning.synonyms.join(", ")}</p>`;
+    try{
 
-    if(meaning.antonyms.length>0)
-        html+=`<p><b>Antonyms:</b> ${meaning.antonyms.join(", ")}</p>`;
+        const response=await fetch(
+            `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`
+        );
 
-    document.getElementById("result").innerHTML=html;
+        if(!response.ok){
+
+            throw new Error();
+
+        }
+
+        const data=await response.json();
+
+        const d=data[0];
+
+        let html="";
+
+        html+=`<h2>${d.word}</h2>`;
+
+        if(d.phonetic){
+
+            html+=`<p><b>Pronunciation:</b> ${d.phonetic}</p>`;
+
+        }
+
+        const audio=d.phonetics.find(x=>x.audio);
+
+        if(audio){
+
+            html+=`
+            <button onclick="new Audio('${audio.audio}').play()">
+            🔊 Play Pronunciation
+            </button><br><br>
+            `;
+
+        }
+
+        d.meanings.forEach(m=>{
+
+            html+=`<hr>`;
+
+            html+=`<h3>${m.partOfSpeech}</h3>`;
+
+            html+=`<p><b>Meaning:</b><br>${m.definitions[0].definition}</p>`;
+
+            if(m.definitions[0].example){
+
+                html+=`<p><b>Example:</b><br>${m.definitions[0].example}</p>`;
+
+            }
+
+            if(m.synonyms.length){
+
+                html+=`<p><b>Synonyms:</b><br>${m.synonyms.slice(0,10).join(", ")}</p>`;
+
+            }
+
+            if(m.antonyms.length){
+
+                html+=`<p><b>Antonyms:</b><br>${m.antonyms.slice(0,10).join(", ")}</p>`;
+
+            }
+
+        });
+
+        result.innerHTML=html;
+
+    }
+
+    catch{
+
+        result.innerHTML=`
+        <h2>❌ Word Not Found</h2>
+        <p>Please check your spelling.</p>
+        `;
+
+    }
 
 }
 </script>
