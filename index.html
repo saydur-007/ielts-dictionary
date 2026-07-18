@@ -247,13 +247,38 @@ async function searchWord() {
 }
 
 async function fetchBangla(word) {
+
+    // Primary source: Google Translate's public endpoint.
+    // Much more reliable for single common words than MyMemory,
+    // which can return unrelated stored phrases from its shared memory.
+    try {
+        const res = await fetch(
+            `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=bn&dt=t&q=${encodeURIComponent(word)}`
+        );
+        if (res.ok) {
+            const data = await res.json();
+            const translated = data && data[0] && data[0][0] && data[0][0][0];
+            if (translated && translated.trim()) {
+                return translated.trim();
+            }
+        }
+    } catch {
+        // fall through to backup source
+    }
+
+    // Fallback: MyMemory (kept as backup in case Google endpoint is blocked)
     try {
         const res = await fetch(
             `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|bn`
         );
         if (!res.ok) return "";
         const data = await res.json();
-        return (data && data.responseData && data.responseData.translatedText) || "";
+        const text = (data && data.responseData && data.responseData.translatedText) || "";
+        // Skip obviously bad matches (MyMemory sometimes echoes the English word back)
+        if (text && text.toLowerCase().trim() !== word.toLowerCase().trim()) {
+            return text;
+        }
+        return "";
     } catch {
         return "";
     }
