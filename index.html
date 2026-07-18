@@ -126,6 +126,36 @@ h3{
 .play-btn{
     background:#2f9e44;
 }
+
+.bangla{
+    margin-top:6px;
+    font-size:17px;
+    color:#a5d6ff;
+    font-family:'Noto Sans Bengali','Nirmala UI',Arial,sans-serif;
+}
+
+.bangla-label{
+    color:#9aa0a6;
+    font-size:13px;
+    margin-right:6px;
+    font-family:Arial,sans-serif;
+}
+
+.word-image{
+    width:100%;
+    max-width:320px;
+    border-radius:10px;
+    margin:12px 0;
+    display:block;
+    object-fit:cover;
+}
+
+.image-credit{
+    font-size:11px;
+    color:#666;
+    margin-top:-8px;
+    margin-bottom:12px;
+}
 </style>
 </head>
 
@@ -157,10 +187,12 @@ let currentAudio = null;
 // Search button
 button.addEventListener("click", searchWord);
 
-// Enter key
-input.addEventListener("keyup", function (event) {
-    if (event.key === "Enter") {
+// Enter key - use keydown so it fires reliably, and stop it from
+// bubbling up (some embed hosts like Notion can otherwise swallow it)
+input.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" || event.keyCode === 13) {
         event.preventDefault();
+        event.stopPropagation();
         searchWord();
     }
 });
@@ -176,6 +208,7 @@ async function searchWord() {
 
     if (!word) return;
 
+    button.disabled = true;
     result.innerHTML = '<p class="loading">🔍 Searching...</p>';
 
     try {
@@ -190,7 +223,13 @@ async function searchWord() {
 
         const data = await response.json();
 
-        renderResult(data[0]);
+        // Fetch Bangla translation and a picture at the same time
+        const [banglaText, imageInfo] = await Promise.all([
+            fetchBangla(word),
+            fetchImage(word)
+        ]);
+
+        renderResult(data[0], banglaText, imageInfo);
 
     } catch {
 
@@ -201,11 +240,46 @@ async function searchWord() {
             </div>
         `;
 
+    } finally {
+        button.disabled = false;
     }
 
 }
 
-function renderResult(entry) {
+async function fetchBangla(word) {
+    try {
+        const res = await fetch(
+            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|bn`
+        );
+        if (!res.ok) return "";
+        const data = await res.json();
+        return (data && data.responseData && data.responseData.translatedText) || "";
+    } catch {
+        return "";
+    }
+}
+
+async function fetchImage(word) {
+    try {
+        const res = await fetch(
+            `https://api.openverse.org/v1/images/?q=${encodeURIComponent(word)}&page_size=1`
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+            const img = data.results[0];
+            return {
+                url: img.thumbnail || img.url,
+                credit: img.creator ? `Photo by ${img.creator}` : ""
+            };
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+function renderResult(entry, banglaText, imageInfo) {
 
     const wordText = entry.word || "";
 
@@ -226,8 +300,19 @@ function renderResult(entry) {
         html += `<div class="phonetic">Pronunciation: ${escapeHtml(phoneticText)}</div>`;
     }
 
+    if (banglaText) {
+        html += `<div class="bangla"><span class="bangla-label">বাংলা:</span>${escapeHtml(banglaText)}</div>`;
+    }
+
     if (audioUrl) {
         html += `<button class="play-btn" onclick="playAudio('${audioUrl.replace(/'/g, "\\'")}')">🔊 Play Pronunciation</button>`;
+    }
+
+    if (imageInfo && imageInfo.url) {
+        html += `<img class="word-image" src="${escapeHtml(imageInfo.url)}" alt="${escapeHtml(wordText)}" onerror="this.style.display='none'">`;
+        if (imageInfo.credit) {
+            html += `<div class="image-credit">${escapeHtml(imageInfo.credit)}</div>`;
+        }
     }
 
     if (Array.isArray(entry.meanings)) {
